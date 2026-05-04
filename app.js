@@ -4,7 +4,7 @@ const DEFAULT_BACKGROUND = "#f3efe6";
 const DEFAULT_CHARACTER = "Rumi";
 const DEFAULT_TEMPLATE_COLOR = "#a42add";
 const TEXTURES_ROOT = "Elementos/Texturas";
-const WHITE_FILL_PATTERN = /(?:style="[^"]*?\bfill\s*:\s*)(#fff(?:fff)?)|(?:fill=")(#fff(?:fff)?)(?:")/gi;
+const WHITE_FILL_PATTERN = /(?:style="[^"]*?\bfill\s*:\s*)(#fff(?:fff)?|white)\b|(?:fill=")(#fff(?:fff)?|white)(?:")/gi;
 const HEAD2_TEMPLATE_SRC = "Elementos/templates/template-head-2.svg";
 const DEFAULT_NOSE_SRC = "Elementos/Texturas/Basic-Textures/nose/Nose-default.svg";
 const EMPTY_OPTIONAL_TEXTURE_SRC = `data:image/svg+xml;utf8,${encodeURIComponent(
@@ -46,7 +46,6 @@ const manualTemplateSources = [
 const characterTexturePathCache = new Map();
 const characterRecordCache = new Map();
 let characterIndexPromise = null;
-const OPTIONAL_CHARACTER_ASSET_KEYS = new Set(["eyes", "eyebrows", "ears", "nose"]);
 
 /* Body & structural textures → Mesa 01 */
 const bodyLayers = [
@@ -85,7 +84,6 @@ const downloadBtn = document.querySelector("#download-pdf");
 const layerTemplate = document.querySelector("#layer-template");
 const characterNameInput = document.querySelector("#character-name");
 const loadCharacterIconBtn = document.querySelector("#load-character-icon");
-const characterSuggestions = document.querySelector("#character-suggestions");
 const iconPreviewSurface = document.querySelector("#icon-preview-surface");
 const characterIconCanvas = document.querySelector("#character-icon-canvas");
 const iconStatus = document.querySelector("#icon-status");
@@ -99,12 +97,10 @@ const templateButtonList = document.querySelector("#template-button-list");
 const selectionSummary = document.querySelector("#selection-summary");
 const applyTemplateColorBtn = document.querySelector("#apply-template-color");
 const resetTemplateColorsBtn = document.querySelector("#reset-template-colors");
-const paletteShortNameInput = document.querySelector("#palette-short-name");
-const saveCharacterColorsBtn = document.querySelector("#save-character-colors");
-const saveColorsStatus = document.querySelector("#save-colors-status");
 
 const boardLayers = new WeakMap();
 const layerNodeRegistry = new Map();
+const layerElementRegistry = new Map();
 const layerAssetCache = new Map();
 const templateSourceCache = new Map();
 const templateRenderCache = new Map();
@@ -154,15 +150,8 @@ downloadBtn.addEventListener("click", generatePDF);
 loadCharacterIconBtn.addEventListener("click", () => {
   loadCharacterIcon(characterNameInput.value);
 });
-characterNameInput.addEventListener("input", () => {
-  syncCharacterSuggestions(characterNameInput.value);
-  syncPaletteShortName(characterNameInput.value);
-});
-characterNameInput.addEventListener("keydown", (event) => {
-  if (event.key === "Enter") {
-    event.preventDefault();
-    loadCharacterIcon(characterNameInput.value);
-  }
+characterNameInput.addEventListener("change", () => {
+  loadCharacterIcon(characterNameInput.value);
 });
 templateColorPicker.addEventListener("input", (event) => {
   setCurrentTemplateColor(event.target.value);
@@ -174,7 +163,6 @@ applyTemplateColorBtn.addEventListener("click", applyColorToSelection);
 resetTemplateColorsBtn.addEventListener("click", () => {
   resetAllTemplateColors();
 });
-saveCharacterColorsBtn.addEventListener("click", saveCharacterColorsFile);
 iconPreviewSurface.addEventListener("click", sampleColorFromPreview);
 iconPreviewSurface.addEventListener("wheel", handleIconZoom, { passive: false });
 iconPreviewSurface.addEventListener("pointerdown", beginIconPan);
@@ -191,8 +179,6 @@ eyedropperBtn.addEventListener("click", openSystemEyeDropper);
 window.addEventListener("resize", renderIconCanvas);
 
 loadAvailableCharacterNames();
-syncCharacterSuggestions(DEFAULT_CHARACTER);
-syncPaletteShortName(DEFAULT_CHARACTER);
 loadCharacterIcon(DEFAULT_CHARACTER);
 
 /* ─── Core helpers ─── */
@@ -230,6 +216,7 @@ function renderBoard(target, layers) {
     image.draggable = false;
 
     registerLayerImage(layer.src, image);
+    registerLayerElement(layer.name, node);
     target.appendChild(node);
   });
 }
@@ -239,6 +226,14 @@ function registerLayerImage(src, image) {
     layerNodeRegistry.set(src, new Set());
   }
   layerNodeRegistry.get(src).add(image);
+}
+
+function registerLayerElement(name, node) {
+  if (!layerElementRegistry.has(name)) {
+    layerElementRegistry.set(name, new Set());
+  }
+
+  layerElementRegistry.get(name).add(node);
 }
 
 function getRenderableSrc(src) {
@@ -436,7 +431,7 @@ async function applyTemplateTint(src, color) {
 
 function tintTemplateSvg(svgText, color) {
   return svgText.replace(WHITE_FILL_PATTERN, (match) =>
-    match.replace(/#fff(?:fff)?/gi, color)
+    match.replace(/#fff(?:fff)?|white/gi, color)
   );
 }
 
@@ -468,6 +463,15 @@ function updateLayerImagesForTemplate(src) {
 
   nodes.forEach((image) => {
     image.src = renderSrc;
+  });
+}
+
+function setLayerVisibility(layerName, visible) {
+  const nodes = layerElementRegistry.get(layerName);
+  if (!nodes) return;
+
+  nodes.forEach((node) => {
+    node.style.display = visible ? "" : "none";
   });
 }
 
@@ -516,8 +520,6 @@ async function loadCharacterIcon(name) {
     const image = await loadImageElement(encodeURI(record.iconSrc));
     await applyCharacterTextures(character);
     characterNameInput.value = record.name;
-    syncCharacterSuggestions(character);
-    syncPaletteShortName(record.name);
     syncIconSamplingCanvas(image);
     currentIconImage = image;
     currentIconNaturalSize = {
@@ -527,10 +529,7 @@ async function loadCharacterIcon(name) {
     resetIconView();
     iconStatus.textContent = "Listo para muestrear color";
   } catch (error) {
-    const suggestion = findClosestCharacterMatch(character);
-    iconStatus.textContent = suggestion
-      ? `No encontré ese icono. Prueba con ${suggestion}`
-      : "No encontré ese icono";
+    iconStatus.textContent = "No encontré ese icono";
     console.error(error);
   }
 }
@@ -548,61 +547,26 @@ async function loadAvailableCharacterNames() {
     availableCharacterNames = [...new Set([DEFAULT_CHARACTER])];
   }
 
-  syncCharacterSuggestions(characterNameInput.value || DEFAULT_CHARACTER);
+  renderCharacterOptions(characterNameInput.value || DEFAULT_CHARACTER);
 }
 
-function syncCharacterSuggestions(rawValue = "") {
-  if (!characterSuggestions) {
-    return;
-  }
+function renderCharacterOptions(selectedName = DEFAULT_CHARACTER) {
+  const normalizedSelection = normalizeCharacterName(selectedName);
+  const resolvedSelection = availableCharacterNames.includes(normalizedSelection)
+    ? normalizedSelection
+    : availableCharacterNames[0] || DEFAULT_CHARACTER;
 
-  const query = normalizeCharacterName(rawValue);
-  const ranked = rankCharacterMatches(query).slice(0, 8);
-
-  characterSuggestions.replaceChildren(
-    ...ranked.map((name) => {
+  characterNameInput.replaceChildren(
+    ...availableCharacterNames.map((name) => {
       const option = document.createElement("option");
       option.value = name;
+      option.textContent = name;
+      option.selected = name === resolvedSelection;
       return option;
     })
   );
-}
 
-function rankCharacterMatches(query) {
-  if (!availableCharacterNames.length) {
-    return [DEFAULT_CHARACTER];
-  }
-
-  if (!query) {
-    return [...availableCharacterNames];
-  }
-
-  const lowered = query.toLowerCase();
-  const startsWith = [];
-  const includes = [];
-  const rest = [];
-
-  availableCharacterNames.forEach((name) => {
-    const normalized = name.toLowerCase();
-    if (normalized.startsWith(lowered)) {
-      startsWith.push(name);
-      return;
-    }
-
-    if (normalized.includes(lowered)) {
-      includes.push(name);
-      return;
-    }
-
-    rest.push(name);
-  });
-
-  return [...startsWith, ...includes, ...rest];
-}
-
-function findClosestCharacterMatch(rawValue) {
-  const [match] = rankCharacterMatches(rawValue);
-  return match || null;
+  characterNameInput.value = resolvedSelection;
 }
 
 async function applyCharacterTextures(character) {
@@ -633,6 +597,12 @@ async function applyCharacterTextures(character) {
       moveLayerRegistryBinding(previousSrc, nextSrc);
       updateLayerImagesForTemplate(nextSrc);
     }
+
+    const isMissingCharacterAsset =
+      Boolean(layer.characterAssetKey) &&
+      nextSrc === EMPTY_OPTIONAL_TEXTURE_SRC;
+
+    setLayerVisibility(layer.name, !isMissingCharacterAsset);
   });
 }
 
@@ -662,15 +632,7 @@ async function resolveCharacterTexturePath(character, assetKey) {
 
   const promise = resolveCharacterRecord(character).then(async (record) => {
     const src = await findFirstExistingAsset(getCharacterTextureCandidates(record, assetKey));
-    if (src) {
-      return src;
-    }
-
-    if (OPTIONAL_CHARACTER_ASSET_KEYS.has(assetKey)) {
-      return EMPTY_OPTIONAL_TEXTURE_SRC;
-    }
-
-    throw new Error(`No encontré una textura válida para ${record.name}:${assetKey}`);
+    return src || EMPTY_OPTIONAL_TEXTURE_SRC;
   });
   characterTexturePathCache.set(cacheKey, promise);
   return promise;
@@ -837,28 +799,6 @@ function normalizeCharacterName(name) {
     .join(" ");
 }
 
-function slugifyCharacterName(name) {
-  return normalizeCharacterName(name)
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-}
-
-function syncPaletteShortName(name) {
-  const character = normalizeCharacterName(name || DEFAULT_CHARACTER);
-  paletteShortNameInput.value = `${slugifyCharacterName(character)}-base`;
-}
-
-function normalizeShortName(value) {
-  const normalized = String(value)
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9-_]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-
-  return normalized || `${slugifyCharacterName(characterNameInput.value || DEFAULT_CHARACTER)}-base`;
-}
-
 function syncIconSamplingCanvas(image) {
   iconSamplingCanvas.width = image.naturalWidth || image.width;
   iconSamplingCanvas.height = image.naturalHeight || image.height;
@@ -925,91 +865,6 @@ async function openSystemEyeDropper() {
       iconStatus.textContent = "No pude leer el color del gotero";
     }
   }
-}
-
-async function saveCharacterColorsFile() {
-  const character = normalizeCharacterName(characterNameInput.value || DEFAULT_CHARACTER);
-  const shortName = normalizeShortName(paletteShortNameInput.value || `${slugifyCharacterName(character)}-base`);
-  const payload = buildCharacterColorPayload(character, shortName);
-  const filename = `${shortName || `${slugifyCharacterName(character)}-colors`}.json`;
-  const json = `${JSON.stringify(payload, null, 2)}\n`;
-
-  saveColorsStatus.textContent = "Preparando JSON…";
-
-  try {
-    await saveJsonFile(json, filename);
-    saveColorsStatus.textContent = `JSON listo para ${character}`;
-  } catch (error) {
-    if (error.name === "AbortError") {
-      saveColorsStatus.textContent = "Guardado cancelado";
-      return;
-    }
-
-    console.error(error);
-    saveColorsStatus.textContent = "No pude guardar el archivo JSON";
-  }
-}
-
-function buildCharacterColorPayload(character, shortName) {
-  const parts = {};
-  const templates = {};
-
-  manualTemplateSources.forEach((src) => {
-    const label = templateLabels[src] || humanizeTemplateName(src);
-    const color = templateTintColors.get(src) || null;
-
-    parts[label] = color;
-    templates[src] = {
-      label,
-      color_hex: color,
-    };
-  });
-
-  const head2Color = templateTintColors.get(HEAD2_TEMPLATE_SRC) || null;
-  const noseColor = head2Color ? darkenColor(head2Color, 0.25) : null;
-
-  return {
-    character,
-    short_name: shortName,
-    saved_at: new Date().toISOString(),
-    colors_hex: {
-      ...parts,
-      Nariz: noseColor,
-    },
-    templates,
-    dependent_assets: {
-      nose_default: {
-        source: DEFAULT_NOSE_SRC,
-        color_hex: noseColor,
-        derived_from: templateLabels[HEAD2_TEMPLATE_SRC] || "Head 2",
-        rule: "25% darker than Head 2",
-      },
-    },
-  };
-}
-
-async function saveJsonFile(json, filename) {
-  if (typeof window.showSaveFilePicker === "function") {
-    const saveTarget = await window.showSaveFilePicker({
-      suggestedName: filename,
-      types: [
-        {
-          description: "Archivo JSON",
-          accept: {
-            "application/json": [".json"],
-          },
-        },
-      ],
-    });
-
-    const writable = await saveTarget.createWritable();
-    await writable.write(json);
-    await writable.close();
-    return;
-  }
-
-  const blob = new Blob([json], { type: "application/json" });
-  await savePdfBlob(null, blob, filename);
 }
 
 function rgbToHex(r, g, b) {
@@ -1191,14 +1046,29 @@ async function renderBoardToCanvas(board) {
   ctx.fillRect(0, 0, BOARD_WIDTH, BOARD_HEIGHT);
 
   for (const layer of layers) {
-    const asset = await loadLayerAssetForSource(layer.src);
-    drawLayer(ctx, asset, layer);
+    if (isOmittedLayerSource(layer.src)) {
+      continue;
+    }
+
+    try {
+      const asset = await loadLayerAssetForSource(layer.src);
+      if (!asset) {
+        continue;
+      }
+      drawLayer(ctx, asset, layer);
+    } catch (error) {
+      console.warn(`Omitiendo capa al exportar PDF: ${layer.name}`, error);
+    }
   }
 
   return canvas;
 }
 
 async function loadLayerAssetForSource(src) {
+  if (isOmittedLayerSource(src)) {
+    return null;
+  }
+
   const renderSrc = getRenderableSrc(src);
   const cacheKey = `${src}::${renderSrc}`;
 
@@ -1207,6 +1077,10 @@ async function loadLayerAssetForSource(src) {
   }
 
   return layerAssetCache.get(cacheKey);
+}
+
+function isOmittedLayerSource(src) {
+  return src === EMPTY_OPTIONAL_TEXTURE_SRC;
 }
 
 async function loadLayerAssetUncached(src) {

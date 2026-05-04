@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Papelcool Texture Board</title>
     <link rel="icon" href="data:," />
-    <link rel="stylesheet" href="./styles.css?v=20260420-3" />
+    <link rel="stylesheet" href="./styles.css?v=20260504-2" />
   </head>
   <body>
     <header class="toolbar">
@@ -36,13 +36,14 @@
           <label class="text-field" for="character-name">
             <span>Personaje</span>
             <div class="text-field__control">
-              <input id="character-name" type="text" value="Rumi" autocomplete="off" list="character-suggestions" />
+              <select id="character-name" aria-label="Seleccionar personaje">
+                <option value="Rumi">Rumi</option>
+              </select>
               <button id="load-character-icon" type="button" class="btn-reset">
                 Cargar
               </button>
             </div>
           </label>
-          <datalist id="character-suggestions"></datalist>
         </div>
 
         <div class="studio-panel__section">
@@ -96,18 +97,6 @@
           </div>
         </div>
 
-        <div class="studio-panel__section">
-          <label class="text-field" for="palette-short-name">
-            <span>Exportar JSON</span>
-            <div class="text-field__control text-field__control--stack">
-              <input id="palette-short-name" type="text" value="rumi-base" autocomplete="off" />
-              <button id="save-character-colors" type="button" class="btn-download">
-                Guardar JSON
-              </button>
-            </div>
-          </label>
-          <span id="save-colors-status" class="studio-panel__hint">Genera un `.json` del personaje actual con los colores hex de cada parte del cuerpo.</span>
-        </div>
       </aside>
 
       <div class="workspace__boards">
@@ -136,6 +125,6 @@
     </template>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="./app.js?v=20260420-3"></script>
+    <script src="./app.js?v=20260504-4"></script>
   </body>
 </html>

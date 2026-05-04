@@ -228,7 +228,8 @@ body {
   align-items: stretch;
 }
 
-.text-field input {
+.text-field input,
+.text-field select {
   flex: 1;
   min-width: 0;
   padding: 9px 10px;
@@ -237,9 +238,11 @@ body {
   background: #101010;
   color: var(--text);
   font: inherit;
+  appearance: none;
 }
 
-.text-field input:focus {
+.text-field input:focus,
+.text-field select:focus {
   outline: none;
   border-color: var(--accent);
 }
