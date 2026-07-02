@@ -72,7 +72,7 @@ const faceLayers = [
   texture("hair-back-2", "Elementos/Texturas/Kpop Demon Hunters/Rumi/hair/Rumi-hair-back.svg", 1461.7, 403, 1674.2, 1674.2, 0, true, "hair-back"),
   texture("hair-front", "Elementos/Texturas/Kpop Demon Hunters/Rumi/hair/Rumi-hair-front.svg", 916.8, 403, 1674.2, 1674.2, 0, false, "hair-front"),
   texture("eyes", "Elementos/Texturas/Kpop Demon Hunters/Rumi/eyes/Rumi-eyes.svg", 1413.9, 759.9, 680.1, 680.1, 0, false, "eyes"),
-  texture("eyebrows", "Elementos/Texturas/Kpop Demon Hunters/Rumi/eyebrows/Rumi-eyebrown.svg", 1413.9, 759.9, 680.1, 680.1, 0, false, "eyebrows"),
+  texture("eyebrows", "Elementos/Texturas/Kpop Demon Hunters/Rumi/eyebrows/Rumi-eyebrows.svg", 1413.9, 759.9, 680.1, 680.1, 0, false, "eyebrows"),
   texture("nose", "Elementos/Texturas/Basic-Textures/nose/Nose-default.svg", 1413.9, 759.9, 680.1, 680.1, 0, false, "nose"),
 ];
 
@@ -682,7 +682,7 @@ function getCharacterTextureCandidates(record, assetKey) {
     case "eyes":
       return [`${base}/eyes/${character}-eyes.svg`];
     case "eyebrows":
-      return [`${base}/eyebrows/${character}-eyebrown.svg`];
+      return [`${base}/eyebrows/${character}-eyebrows.svg`];
     case "nose":
       return [
         `${base}/nose/${character}-nose.svg`,
