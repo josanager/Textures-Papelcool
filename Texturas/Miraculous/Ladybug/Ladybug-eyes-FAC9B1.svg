@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
-<svg width="100%" height="100%" viewBox="0 0 836 836" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;">
-    <g transform="matrix(1,0,0,1,-20062.693631,-10046.026601)">
-        <g id="Ladybug-eyes-FAC9B1" transform="matrix(1,0,0,1,16053.741299,2594.019964)">
-            <g>
-                <rect x="4008.952" y="7452.007" width="835.946" height="835.946" style="fill:none;"/>
-                <g transform="matrix(0.868886,0,0,1.228854,2902.955756,6737.952014)">
+<svg width="100%" height="100%" viewBox="0 0 836 836" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:affinity="https://www.affinity.studio/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;">
+    <g transform="matrix(1,0,0,1,-20062.693631,-18091.05927)">
+        <g id="Ladybug-eyes-FAC9B1" transform="matrix(1,0,0,1,16053.741299,10639.052632)">
+            <rect x="4008.952" y="7452.007" width="835.946" height="835.946" style="fill:none;"/>
+            <g transform="matrix(0.499302,0,0,0.499302,-13126.321649,4734.636325)">
+                <g transform="matrix(0.707071,0,0,1,33915.430197,5217.913437)">
                     <g transform="matrix(4.612869,0,-0,3.261625,1753.92991,1092.312069)">
                         <path d="M0,-58.917C0,-58.917 -17.925,-66.079 -27.325,-68.039C-40.129,-70.711 -65.252,-75.683 -76.825,-74.946C-84.449,-74.461 -93.451,-70.513 -96.756,-63.623C-100.865,-55.05 -101.583,-34.48 -101.485,-23.508C-101.408,-14.758 -98.556,-3.906 -96.173,2.203C-90.494,16.766 -67.479,12.517 -54.111,10.802C-41.732,9.212 -29.314,4.292 -22.327,2.616C-14.346,0.701 0,-7.769 0,-7.769C0,-7.769 14.346,0.701 22.327,2.616C29.338,4.298 41.818,9.21 54.24,10.802C67.565,12.509 90.494,16.766 96.175,2.203C98.556,-3.906 101.408,-14.758 101.487,-23.508C101.583,-34.48 100.867,-55.05 96.756,-63.623C93.453,-70.513 84.449,-74.461 76.825,-74.946C65.252,-75.683 40.129,-70.711 27.325,-68.039C17.925,-66.079 0,-58.917 0,-58.917" style="fill:rgb(255,0,0);"/>
                         <clipPath id="_clip1">
